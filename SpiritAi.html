@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add KaTeX for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
+    <style>
+        @keyframes glow {
+            0%, 100% {
+                text-shadow: 0 0 2px #ffffff,
+                            0 0 4px #ffffff,
+                            0 0 6px #3b82f6;
+                transform: translateY(0);
+            }
+            50% {
+                text-shadow: 0 0 3px #ffffff,
+                            0 0 6px #ffffff,
+                            0 0 9px #3b82f6;
+                transform: translateY(-2px);
+            }
+        }
+
+        @keyframes scanline {
+            0% {
+                transform: translateY(-100%);
+            }
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 10px 5px rgba(59, 130, 246, 0.2);
+            }
+        }
+
+        @keyframes loading {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes jump {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+            }
+            50% {
+                transform: translateY(-5px);
+                box-shadow: 0 5px 20px rgba(59, 130, 246, 0.2);
+            }
+        }
+
+        .title-container {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 20;
+        }
+
+        .glowing-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ffffff;
+            animation: glow 3s ease-in-out infinite;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .glowing-title span {
+            display: inline-block;
+            position: relative;
+            padding-bottom: 4px;
+        }
+
+        .glowing-title span:first-child {
+            margin-right: 12px;
+        }
+
+        .chat-container {
+            position: fixed;
+            left: 2rem;
+            top: 15%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background-color: rgba(17, 17, 17, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 40%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: float 3s ease-in-out infinite;
+        }
+        .spline-container {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100vh;
+            z-index: 1;
+        }
+        .watermark-cover {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 200px;
+            height: 70px;
+            background-color: #000000;
+            z-index: 2;
+        }
+        spline-viewer {
+            width: 100%;
+            height: 100%;
+        }
+        body {
+            background-color: #000000;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .input-field {
+            background-color: rgba(31, 31, 31, 0.9);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .input-field:focus {
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+        .result-box {
+            background-color: rgba(31, 31, 31, 0.9);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 300px;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        .loading-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .loading-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: white;
+            border-radius: 50%;
+        }
+        .loading-dots span:nth-child(1) {
+            animation: jump 0.6s ease-in-out infinite;
+        }
+        .loading-dots span:nth-child(2) {
+            animation: jump 0.6s ease-in-out infinite 0.2s;
+        }
+        .loading-dots span:nth-child(3) {
+            animation: jump 0.6s ease-in-out infinite 0.4s;
+        }
+        .submit-button {
+            background-color: #333333;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .submit-button:hover {
+            background-color: #444444;
+        }
+        .submit-button:active {
+            background-color: #555555;
+        }
+        .submit-button.loading {
+            background-color: #444444;
+        }
+        .result-box h2 {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        .result-box h3 {
+            color: #e5e7eb;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin: 0.75rem 0;
+        }
+        .result-box p {
+            margin: 0.5rem 0;
+            line-height: 1.5;
+        }
+        .result-box hr {
+            border-color: rgba(255, 255, 255, 0.1);
+            margin: 1rem 0;
+        }
+        .result-box b {
+            color: #ffffff;
+            font-weight: bold;
+        }
+        /* Custom scrollbar for the result box */
+        .result-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        .result-box::-webkit-scrollbar-track {
+            background: rgba(31, 31, 31, 0.5);
+        }
+        .result-box::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        .result-box::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+        /* Custom scrollbar for the chat container */
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: rgba(31, 31, 31, 0.5);
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(17, 17, 17, 0.85);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 2rem;
+            z-index: 5;
+        }
+
+        .footer-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .disclaimer {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 0.25rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .footer-links svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .copyright {
+            font-size: 0.875rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .copyright-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .contact-info {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .api-key-field {
+            background-color: rgba(31, 31, 31, 0.9);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+        }
+        .api-key-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .api-key-field:focus {
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-black">
+    <div class="title-container">
+        <h1 class="glowing-title">
+            <span>SPIRYT</span><span>AI</span>
+        </h1>
+    </div>
+    <div class="spline-container">
+        <spline-viewer url="https://prod.spline.design/0rKthWabtfrCQqL9/scene.splinecode"></spline-viewer>
+    </div>
+    <div class="watermark-cover"></div>
+    <div class="chat-container p-6 rounded-xl shadow-2xl">
+        <div class="mb-4">
+            <input id="userInput" type="text" placeholder="Enter your text" class="input-field p-3 rounded-lg w-full mb-2">
+            <input id="apiKey" type="password" placeholder="Enter your OpenRouter API key (optional)" class="api-key-field p-2 rounded-lg w-full mb-2">
+            <button id="submitButton" onclick="submitText()" class="submit-button p-3 rounded-lg w-full">Submit</button>
+        </div>
+        <div id="result" class="result-box p-4 rounded-lg"></div>
+    </div>
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="copyright">
+                <div class="copyright-info">
+                    © 2025 Ayush Agrawal (12322587). All rights reserved. 🚀
+                </div>
+                <div class="contact-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                    <a href="mailto:aa2037768@gmail.com" class="hover:text-blue-400">aa2037768@gmail.com</a>
+                </div>
+            </div>
+            <div class="footer-links">
+                <a href="https://www.linkedin.com/in/ayush-agrawal-ba5a3628a" target="_blank" rel="noopener noreferrer">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                    LinkedIn
+                </a>
+                <a href="https://github.com/AyushAgrawal2004" target="_blank" rel="noopener noreferrer">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+        <div class="disclaimer">
+            Disclaimer: This project uses OpenRouter API. If you don't provide your own API key, it will use the default key which can be removed at any time. Get your own API key from <a href="https://openrouter.ai/" target="_blank" class="text-blue-400 hover:text-blue-300">OpenRouter</a>.
+        </div>
+    </footer>
+    <script>
+        async function submitText(){
+            const userInput = document.getElementById("userInput").value;
+            const apiKey = document.getElementById("apiKey").value;
+            const response = document.getElementById("result");
+            const submitButton = document.getElementById("submitButton");
+            
+            if(!userInput){
+                response.innerHTML = "<p class='text-gray-400'>Please enter a text</p>";
+                return;
+            }
+
+            // Disable button and show loading state
+            submitButton.disabled = true;
+            submitButton.classList.add('loading');
+            submitButton.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+            response.innerHTML = "<div class='flex items-center justify-center p-4'><div class='w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div></div>";
+            
+            try{
+                const result = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${apiKey || ""}`,
+                        "HTTP-Referer": "http://localhost",
+                        "X-Title": "AI Chat",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "model": "deepseek/deepseek-r1:free",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are a helpful assistant. Format your responses using HTML tags: Use <h2> for main headings, <h3> for subheadings, <p> for paragraphs, <hr> for horizontal rules between sections, and <b> for important terms. Make the response well-structured and easy to read."
+                            },
+                            {
+                                "role": "user",
+                                "content": userInput
+                            }
+                        ]
+                    })
+                });
+
+                if (!result.ok) {
+                    const errorData = await result.json();
+                    throw new Error(`API Error: ${errorData.error?.message || result.statusText}`);
+                }
+
+                const data = await result.json();
+                console.log("API Response:", data);
+
+                if (!data.choices || !data.choices.length) {
+                    throw new Error("No response from AI");
+                }
+
+                const aiResponse = data.choices[0].message?.content;
+                if (!aiResponse || aiResponse.trim() === "\\boxed{}") {
+                    response.innerHTML = "<p class='text-gray-400'>I apologize, but I couldn't generate a response. Please try rephrasing your question or try again later.</p>";
+                    return;
+                }
+
+                if (aiResponse.includes('```json')) {
+                    try {
+                        const jsonMatch = aiResponse.match(/```json\s*([\s\S]*?)\s*```/);
+                        if (jsonMatch && jsonMatch[1]) {
+                            const jsonContent = JSON.parse(jsonMatch[1]);
+                            response.innerHTML = `
+                                <div class="space-y-2 text-gray-200">
+                                    <p class="font-semibold">${jsonContent.reasoning}</p>
+                                </div>
+                            `;
+                        } else {
+                            response.innerHTML = aiResponse;
+                        }
+                    } catch (e) {
+                        console.error("JSON parsing error:", e);
+                        response.innerHTML = aiResponse;
+                    }
+                } else {
+                    const cleanResponse = aiResponse.replace(/\\boxed{(.*?)}/, '$1');
+                    response.innerHTML = cleanResponse;
+                }
+            }catch(error){
+                console.error("Error details:", error);
+                response.innerHTML = `<p class="text-gray-400">An error occurred: ${error.message}</p>`;
+            } finally {
+                // Re-enable button and remove loading state
+                submitButton.disabled = false;
+                submitButton.classList.remove('loading');
+                submitButton.innerHTML = 'Submit';
+            }
+        }
+    </script>
+</body>
+</html>
